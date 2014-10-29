@@ -67,7 +67,7 @@
   (-lookup [tagged-obj k not-found]
     (-lookup (.-obj tagged-obj) k not-found)))
 
-(defn tagged? [x] (satisfies? Tagged x))
+(defn tagged? [x] (instance? Tagged x))
 
 (edn/register-default-tag-parser!
  (fn [tag x]
@@ -110,8 +110,10 @@
     (print (str "{}"))))
 
 (defn pprint-tagged [obj current-indent indent?]
+  (when indent?
+    (print current-indent))
   (print (str "#" (.-tag obj) " "))
-  (pprint (.-obj obj) current-indent indent?))
+  (pprint (.-obj obj) current-indent false))
 
 (defn pprint-default [obj current-indent indent?]
   (when indent?
