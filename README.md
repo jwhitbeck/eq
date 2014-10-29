@@ -49,7 +49,7 @@ $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:countr
 
 ## Download 
 
-Just download eq from this [here](https://raw.githubusercontent.com/jwhitbeck/eq/master/eq) and place it on your PATH.
+Just download eq from [here](https://raw.githubusercontent.com/jwhitbeck/eq/master/eq) and place it on your PATH.
 
 ## Requirements
 
