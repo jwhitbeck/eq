@@ -9,11 +9,14 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns eq.core
+  (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.nodejs :as nodejs]
             [cljs.tools.cli :as cli]
-            [cljs.reader :as edn]))
+            [cljs.reader :as edn]
+            [cljs.core.async :refer [>! chan <! close!]]))
 
 (nodejs/enable-util-print!)
+(.on js/process.stdout "error" js/process.exit) ; exit on closed stdout
 
 (def fs (js/require "fs"))
 
@@ -129,20 +132,15 @@
    (tagged? obj) (pprint-tagged obj current-indent indent?)
    :else (pprint-default obj current-indent indent?)))
 
-(defn print-coll-with-get-ins [pr-fn kss coll]
-  (doseq [obj coll
-          ks kss]
-    (pr-fn (get-in obj ks))
-    (println)))
-
-(defn print-coll [pr-fn coll]
-  (doseq [obj coll]
-    (pr-fn obj)
-    (println)))
-
-(defn edn-seq [pbrdr]
-  (->> (repeatedly #(edn/read pbrdr false ::eof false))
-       (take-while (partial not= ::eof))))
+(defn edn-ch [pbrdr]
+  (let [ch (chan)
+        read-next #(edn/read pbrdr false ::eof false)]
+    (go (loop [obj (read-next)]
+          (if (= obj ::eof)
+            (close! ch)
+            (do (>! ch obj)
+                (recur (read-next))))))
+    ch))
 
 (def cli-options
   [["-c" "--compact" "Compact output, don't pretty-print"]
@@ -157,17 +155,29 @@
 (defn print-usage [summary]
   (println (str "Usage: eq [OPTIONS]" "\n" summary)))
 
+(defn print-fn [options]
+  (let [get-ins (:get-in options)
+        pr-fn (if (:compact options) pr #(pprint % "" false))]
+    (if (seq get-ins)
+      (fn [obj]
+        (doseq [ks get-ins]
+          (pr-fn (get-in obj ks))
+          (println)))
+      (fn [obj]
+        (pr-fn obj)
+        (println)))))
+
 (defn -main [& args]
   (let [parsed-opts (cli/parse-opts args cli-options)
         options (:options parsed-opts)]
     (cond
      (or (:help options) (-> parsed-opts :errors empty? not)) (print-usage (:summary parsed-opts))
      (:version options) (println "0.1.0")
-     :else (let [pr-fn (if (:compact options) pr #(pprint % "" false))
-                 get-ins (:get-in options)
-                 edns (-> (.openSync fs "/dev/stdin" "rs") buffered-reader pushback-reader edn-seq)]
-             (if (seq get-ins)
-               (print-coll-with-get-ins pr-fn get-ins edns)
-               (print-coll pr-fn edns))))))
+     :else (let [pr-fn (print-fn options)
+                 ch (-> (.openSync fs "/dev/stdin" "rs") buffered-reader pushback-reader edn-ch)]
+             (go (loop [obj (<! ch)]
+                   (when obj
+                     (pr-fn obj)
+                     (recur (<! ch)))))))))
 
 (set! *main-cli-fn* -main)
