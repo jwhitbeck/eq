@@ -132,13 +132,16 @@
    (tagged? obj) (pprint-tagged obj current-indent indent?)
    :else (pprint-default obj current-indent indent?)))
 
+(defn escape-nil [x] (if (nil? x) ::nil x))
+(defn unescape-nil [x] (if (= ::nil x) nil x))
+
 (defn edn-ch [pbrdr]
   (let [ch (chan)
         read-next #(edn/read pbrdr false ::eof false)]
     (go (loop [obj (read-next)]
           (if (= obj ::eof)
             (close! ch)
-            (do (>! ch obj)
+            (do (>! ch (escape-nil obj))
                 (recur (read-next))))))
     ch))
 
@@ -177,7 +180,7 @@
                  ch (-> (.openSync fs "/dev/stdin" "rs") buffered-reader pushback-reader edn-ch)]
              (go (loop [obj (<! ch)]
                    (when obj
-                     (pr-fn obj)
+                     (pr-fn (unescape-nil obj))
                      (recur (<! ch)))))))))
 
 (set! *main-cli-fn* -main)
