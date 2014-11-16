@@ -10,10 +10,18 @@ A simple CLI tool for processing [EDN][edn] data.
 $ eq -h
 
 Usage: eq [OPTIONS]
-  -c, --compact        Compact output, don't pretty-print
-  -g, --get-in KS  []  Apply #(get-in % KS) to each parsed edn object. Multiple such --get-in options may be passed, in which case each get-in will output to a separate line.
-  -v, --version        Prints the eq version
+
+  -c, --compact              Compact output, don't pretty-print
+  -d, --dissoc K         []  Apply #(dissoc % K) to each parsed edn object.
+      --apply-dissoc KS  []  Apply #(apply dissoc % KS) to each parsed edn object.
+  -g, --get K            []  Apply #(get % K) to each parsed edn object.
+      --get-in KS        []  Apply #(get-in % KS) to each parsed edn object.
+  -s, --select-keys KS   []  Apply #(select-keys % KS) to each parsed edn object.
+  -v, --version              Prints the eq version
   -h, --help
+
+Multiple --dissoc, --apply-dissoc, --get, --get-in, --select-keys options may be passed,
+in which case the output of each will be on a separate line.
 ```
 
 #### Pretty printing
@@ -41,13 +49,57 @@ $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:countr
 
 ```
 $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
-  | eq --get-in [:id] --get-in '[:geo :country]' | xargs -n2
+  | eq --get :id --get-in '[:geo :country]' | xargs -n2
 
 1 US
 2 FR
 ```
 
-## Download 
+#### Map manipulation
+
+```
+$ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
+  | eq --dissoc :geo
+
+{
+  :id 1
+  :name "foo"
+}
+{
+  :id 2
+  :name "bar"
+}
+```
+```
+$ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
+  | eq --apply-dissoc '[:name :geo]'
+
+{
+  :id 1
+}
+{
+  :id 2
+}
+```
+```
+$ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
+  | eq --select-keys '[:id :geo]'
+
+{
+  :id 1
+  :geo {
+    :country "US"
+  }
+}
+{
+  :id 2
+  :geo {
+    :country "FR"
+  }
+}
+```
+
+## Download
 
 Just download eq from [here](https://raw.githubusercontent.com/jwhitbeck/eq/master/eq) and place it on your PATH.
 
