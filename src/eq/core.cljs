@@ -147,27 +147,43 @@
 
 (def cli-options
   [["-c" "--compact" "Compact output, don't pretty-print"]
-   ["-g" "--get-in KS"
-    (str "Apply #(get-in % KS) to each parsed edn object. Multiple such --get-in options may be passed, "
-         "in which case each get-in will output to a separate line.")
+   ["-d" "--dissoc K" "Apply #(dissoc % K) to each parsed edn object."
+    :default []
+    :assoc-fn (fn [m k v] (update-in m [k] conj (edn/read-string v)))]
+   [nil "--apply-dissoc KS" "Apply #(apply dissoc % KS) to each parsed edn object."
+    :default []
+    :assoc-fn (fn [m k v] (update-in m [k] conj (edn/read-string v)))]
+   ["-g" "--get K" "Apply #(get % K) to each parsed edn object. "
+    :default []
+    :assoc-fn (fn [m k v] (update-in m [k] conj (edn/read-string v)))]
+   [nil "--get-in KS" "Apply #(get-in % KS) to each parsed edn object."
+    :default []
+    :assoc-fn (fn [m k v] (update-in m [k] conj (edn/read-string v)))]
+   ["-s" "--select-keys KS" "Apply #(select-keys % KS) to each parsed edn object."
     :default []
     :assoc-fn (fn [m k v] (update-in m [k] conj (edn/read-string v)))]
    ["-v" "--version" "Prints the eq version"]
    ["-h" "--help"]])
 
 (defn print-usage [summary]
-  (println (str "Usage: eq [OPTIONS]" "\n" summary)))
+  (println (str "Usage: eq [OPTIONS]" "\n\n" summary "\n\n"
+                "Multiple --dissoc, --apply-dissoc, --get, --get-in, --select-keys options may be passed, "
+                "in which case the output of each will be on a separate line.")))
 
 (defn print-fn [options]
-  (let [get-ins (:get-in options)
-        pr-fn (if (:compact options) pr #(pprint % "" false))]
-    (if (seq get-ins)
-      (fn [obj]
-        (doseq [ks get-ins]
-          (pr-fn (get-in obj ks))
+  (let [pr-fn (if (:compact options) pr #(pprint % "" false))
+        extractors (concat (map #(fn [x] (dissoc x %)) (:dissoc options))
+                           (map #(fn [x] (apply dissoc x %)) (:apply-dissoc options))
+                           (map #(fn [x] (get x %)) (:get options))
+                           (map #(fn [x] (get-in x %)) (:get-in options))
+                           (map #(fn [x] (select-keys x %)) (:select-keys options)))]
+    (if (seq extractors)
+      (fn [x]
+        (doseq [extractor extractors]
+          (pr-fn (extractor x))
           (println)))
-      (fn [obj]
-        (pr-fn obj)
+      (fn [x]
+        (pr-fn x)
         (println)))))
 
 (defn -main [& args]
