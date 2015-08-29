@@ -27,22 +27,12 @@ in which case the output of each will be on a separate line.
 #### Pretty printing
 
 ```
-$ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' | eq
+$ echo '{:id 1 :name "foo" :geo {:country "US" :region "CA"} :date "2000-01-01T00:00:00Z"}' | eq
 
-{
-  :id 1
-  :name "foo"
-  :geo {
-    :country "US"
-  }
-}
-{
-  :id 2
-  :name "bar"
-  :geo {
-    :country "FR"
-  }
-}
+{:date "2000-01-01T00:00:00Z",
+ :name "foo",
+ :geo {:region "CA", :country "US"},
+ :id 1}
 ```
 
 #### Field extraction
@@ -61,42 +51,22 @@ $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:countr
 $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
   | eq --dissoc :geo
 
-{
-  :id 1
-  :name "foo"
-}
-{
-  :id 2
-  :name "bar"
-}
+{:name "foo", :id 1}
+{:name "bar", :id 2}
 ```
 ```
 $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
   | eq --apply-dissoc '[:name :geo]'
 
-{
-  :id 1
-}
-{
-  :id 2
-}
+{:id 1}
+{:id 2}
 ```
 ```
 $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:country "FR"}}' \
   | eq --select-keys '[:id :geo]'
 
-{
-  :id 1
-  :geo {
-    :country "US"
-  }
-}
-{
-  :id 2
-  :geo {
-    :country "FR"
-  }
-}
+{:id 1, :geo {:country "US"}}
+{:id 2, :geo {:country "FR"}}
 ```
 
 ## Download
