@@ -9,11 +9,13 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns eq.core
-  (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.nodejs :as nodejs]
-            [cljs.tools.cli :as cli]
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
+  (:require [cljs.core.async :refer [>! chan <! close!]]
+            [cljs.pprint :as pprint]
+            [cljs.nodejs :as nodejs]
             [cljs.reader :as edn]
-            [cljs.core.async :refer [>! chan <! close!]]))
+            [cljs.tools.cli :as cli]
+            [clojure.string :as string]))
 
 (nodejs/enable-util-print!)
 (.on js/process.stdout "error" js/process.exit) ; exit on closed stdout
@@ -63,87 +65,26 @@
     (-write writer (str "#" (.-tag tagged-obj) " "))
     (-pr-writer (.-obj tagged-obj) writer opts)))
 
-(extend-protocol ILookup
-  Tagged
-  (-lookup [tagged-obj k]
-    (-lookup (.-obj tagged-obj) k))
-  (-lookup [tagged-obj k not-found]
-    (-lookup (.-obj tagged-obj) k not-found)))
+(defmethod pprint/simple-dispatch :default
+  [obj]
+  (if (instance? Tagged obj)
+    (do (-write *out* (str "#" (.-tag obj) " "))
+        (pprint/simple-dispatch (.-obj obj)))
+    (-write *out* (pr-str obj))))
+
+(extend-type Tagged
+  ILookup
+  (-lookup
+    ([tagged-obj k]
+     (-lookup (.-obj tagged-obj) k))
+    ([tagged-obj k not-found]
+     (-lookup (.-obj tagged-obj) k not-found))))
 
 (defn tagged? [x] (instance? Tagged x))
 
 (edn/register-default-tag-parser!
  (fn [tag x]
    (Tagged. x tag)))
-
-;;; Primitive pretty-printing functionality.
-;;; TODO: Replace with cljs.core.pprint once it is implemented
-(declare pprint)
-
-(def indent "  ")
-
-(defn pprint-list-delimited [coll begin-delim end-delim current-indent indent?]
-  (if (seq coll)
-    (do
-      (when indent?
-        (print current-indent))
-      (println begin-delim)
-      (let [ind (str current-indent indent)]
-        (doseq [x coll]
-          (pprint x ind true)
-          (println)))
-      (print current-indent)
-      (print end-delim))
-    (print (str begin-delim end-delim))))
-
-(defn pprint-map [coll current-indent indent?]
-  (if (seq coll)
-    (do
-      (when indent?
-        (print current-indent))
-      (println "{")
-      (let [ind (str current-indent indent)]
-        (doseq [[k v] coll]
-          (pprint k ind true)
-          (print " ")
-          (pprint v ind false)
-          (println)))
-      (print current-indent)
-      (print "}"))
-    (print (str "{}"))))
-
-(defn pprint-tagged [obj current-indent indent?]
-  (when indent?
-    (print current-indent))
-  (print (str "#" (.-tag obj) " "))
-  (pprint (.-obj obj) current-indent false))
-
-(defn pprint-default [obj current-indent indent?]
-  (when indent?
-    (print current-indent))
-  (pr obj))
-
-(defn pprint [obj current-indent indent?]
-  (cond
-   (map? obj) (pprint-map obj current-indent indent?)
-   (vector? obj) (pprint-list-delimited obj "[" "]" current-indent indent?)
-   (set? obj) (pprint-list-delimited obj "#{" "}" current-indent indent?)
-   (list? obj) (pprint-list-delimited obj "(" ")" current-indent indent?)
-   (tagged? obj) (pprint-tagged obj current-indent indent?)
-   :else (pprint-default obj current-indent indent?)))
-
-(defn escape-nil [x] (if (nil? x) ::nil x))
-(defn unescape-nil [x] (if (= ::nil x) nil x))
-
-(defn edn-ch [pbrdr]
-  (let [ch (chan)
-        read-next #(edn/read pbrdr false ::eof false)]
-    (go (loop [obj (read-next)]
-          (if (= obj ::eof)
-            (close! ch)
-            (do (>! ch (escape-nil obj))
-                (recur (read-next))))))
-    ch))
 
 (def cli-options
   [["-c" "--compact" "Compact output, don't pretty-print"]
@@ -170,8 +111,14 @@
                 "Multiple --dissoc, --apply-dissoc, --get, --get-in, --select-keys options may be passed, "
                 "in which case the output of each will be on a separate line.")))
 
+;;; Workaround the fact that the javascript console always prints a newline
+(defn pr-pretty [obj]
+  (-> (with-out-str (pprint/pprint obj))
+      string/trim-newline
+      print))
+
 (defn print-fn [options]
-  (let [pr-fn (if (:compact options) pr #(pprint % "" false))
+  (let [pr-fn (if (:compact options) pr pr-pretty)
         extractors (concat (map #(fn [x] (dissoc x %)) (:dissoc options))
                            (map #(fn [x] (apply dissoc x %)) (:apply-dissoc options))
                            (map #(fn [x] (get x %)) (:get options))
@@ -180,11 +127,8 @@
     (if (seq extractors)
       (fn [x]
         (doseq [extractor extractors]
-          (pr-fn (extractor x))
-          (println)))
-      (fn [x]
-        (pr-fn x)
-        (println)))))
+          (pr-fn (extractor x))))
+      pr-fn)))
 
 (defn -main [& args]
   (let [parsed-opts (cli/parse-opts args cli-options)
@@ -193,10 +137,10 @@
      (or (:help options) (-> parsed-opts :errors empty? not)) (print-usage (:summary parsed-opts))
      (:version options) (println "0.2.0")
      :else (let [pr-fn (print-fn options)
-                 ch (-> (.openSync fs "/dev/stdin" "rs") buffered-reader pushback-reader edn-ch)]
-             (go (loop [obj (<! ch)]
-                   (when obj
-                     (pr-fn (unescape-nil obj))
-                     (recur (<! ch)))))))))
+                 pbrdr (-> (.openSync fs "/dev/stdin" "rs") buffered-reader pushback-reader)]
+             (go-loop [obj (edn/read pbrdr false ::eof false)]
+               (when-not (= obj ::eof)
+                 (pr-fn obj)
+                 (recur (edn/read pbrdr false ::eof false))))))))
 
 (set! *main-cli-fn* -main)
