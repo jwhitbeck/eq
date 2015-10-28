@@ -17,7 +17,7 @@
             [cljs.tools.cli :as cli]
             [clojure.string :as string]))
 
-(nodejs/enable-util-print!)
+(enable-console-print!)
 (.on js/process.stdout "error" js/process.exit) ; exit on closed stdout
 
 (def fs (js/require "fs"))
