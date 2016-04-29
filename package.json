@@ -1,5 +1,5 @@
 {
-    "name": "eq",
+    "name": "edn-eq",
     "version": "0.2.2",
     "description": "A simple CLI tool for processing EDN data.",
     "scripts": {
