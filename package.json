@@ -1,6 +1,6 @@
 {
     "name": "edn-eq",
-    "version": "0.2.2",
+    "version": "0.2.4",
     "description": "A simple CLI tool for processing EDN data.",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -20,6 +20,6 @@
     "preferGlobal": true,
     "bin": {
         "eq": "eq.js"
-    }
-
+    },
+    "files": ["eq.js", "LICENSE.txt"]
 }
