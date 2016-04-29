@@ -1,0 +1,25 @@
+{
+    "name": "eq",
+    "version": "0.2.1",
+    "description": "A simple CLI tool for processing EDN data.",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jwhitbeck/eq.git"
+    },
+    "keywords": [
+        "edn"
+    ],
+    "author": "John Whitbeck <john@whitbeck.net>",
+    "license": "Apache License 2.0",
+    "bugs": {
+        "url": "https://github.com/jwhitbeck/eq/issues"
+    },
+    "preferGlobal": true,
+    "bin": {
+        "eq": "eq.js"
+    }
+
+}

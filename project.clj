@@ -16,9 +16,8 @@
                                   [org.clojure/tools.nrepl "0.2.12"]]
                    :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}}
   :cljsbuild {:builds [{:source-paths ["src"]
-                        :notify-command ["./post-build.sh"]
                         :compiler {:target :nodejs
-                                   :output-to "eq"
+                                   :output-to "eq.js"
                                    :externs ["src/eq/externs.js"]
                                    :pretty-print false
                                    :optimizations :advanced}}]})
