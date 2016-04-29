@@ -69,15 +69,19 @@ $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:countr
 {:id 2, :geo {:country "FR"}}
 ```
 
-## Download
+## Install
 
-Just download eq from [here](https://raw.githubusercontent.com/jwhitbeck/eq/master/eq) and place it on your PATH.
+```bash
+sudo npm install -g edn-eq
+```
 
 ## Requirements
 
-`eq` is writen in [ClojureScript][clojurescript] targeting [node.js][nodejs]. Therefore it requires a recent version of node.js and expects the `node` executable to be on your PATH.
+`eq` is writen in [ClojureScript][clojurescript] targeting [node.js][nodejs]. Therefore it requires a
+reasonably recent version of node.js (>=0.10) and expects the `node` executable to be on your PATH.
 
-On some platforms (e.g., Ubuntu), the node.js binary is `nodejs` instead of `node`. If so, then you need to edit `eq` and change the shebang line from `#!/usr/bin/env node` to `#!/usr/bin/env nodejs`. Alternatively, you can just use the following one-liner: `sed -i 's/node/nodejs/' eq`.
+On Ubuntu, the node.js binary is `nodejs` instead of `node`. Installing the `nodejs-legacy` package will add
+the appropriate symlink.
 
 [clojurescript]: https://github.com/clojure/clojurescript
 [nodejs]: http://nodejs.org/
