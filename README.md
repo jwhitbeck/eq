@@ -77,7 +77,7 @@ sudo npm install -g edn-eq
 
 ## Requirements
 
-`eq` is writen in [ClojureScript][clojurescript] targeting [node.js][nodejs]. Therefore it requires a
+`eq` is written in [ClojureScript][clojurescript] targeting [node.js][nodejs]. Therefore it requires a
 reasonably recent version of node.js (>=0.10) and expects the `node` executable to be on your PATH.
 
 On Ubuntu, the node.js binary is `nodejs` instead of `node`. Installing the `nodejs-legacy` package will add
