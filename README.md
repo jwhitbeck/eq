@@ -84,6 +84,6 @@ On some platforms (e.g., Ubuntu), the node.js binary is `nodejs` instead of `nod
 
 ## License
 
-Copyright &copy; 2014 John Whitbeck
+Copyright &copy; 2014-2016 John Whitbeck
 
-Distributed under the Eclipse Public License, the same as ClojureScript.
+Distributed under the Apache License, Version 2.0.
