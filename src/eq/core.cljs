@@ -123,7 +123,7 @@
         options (:options parsed-opts)]
     (cond
      (or (:help options) (-> parsed-opts :errors empty? not)) (print-usage (:summary parsed-opts))
-     (:version options) (println "0.2.4")
+     (:version options) (println "0.2.5")
      :else (let [pr-fn (print-fn options)
                  fd (.openSync fs "/dev/stdin" "rs")]
              (go (try

@@ -1,4 +1,4 @@
-(defproject eq "0.2.4"
+(defproject eq "0.2.5"
   :description "A cli tool for processing EDN data."
   :url "https://github.com/jwhitbeck/eq"
   :license {:name "Eclipse Public License"
