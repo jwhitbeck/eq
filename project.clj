@@ -9,6 +9,7 @@
                  [org.clojure/clojurescript "1.9.473"]
                  [org.clojure/core.async "0.2.395"]
                  [org.clojure/tools.cli "0.3.5"]
+                 [cljsjs/nodejs-externs "1.0.4-1"]]
   :plugins [[lein-cljsbuild "1.1.5"]]
   :source-paths ["src"]
   :hooks [leiningen.cljsbuild]
@@ -18,6 +19,4 @@
   :cljsbuild {:builds [{:source-paths ["src"]
                         :compiler {:target :nodejs
                                    :output-to "eq.js"
-                                   :externs ["src/eq/externs.js"]
-                                   :pretty-print false
                                    :optimizations :advanced}}]})
