@@ -88,6 +88,6 @@ the appropriate symlink.
 
 ## License
 
-Copyright &copy; 2014-2016 John Whitbeck
+Copyright &copy; 2014-2017 John Whitbeck
 
 Distributed under the Apache License, Version 2.0.
