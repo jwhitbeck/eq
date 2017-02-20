@@ -72,7 +72,7 @@ $ echo '{:id 1 :name "foo" :geo {:country "US"}}{:id 2 :name "bar" :geo {:countr
 ## Install
 
 ```bash
-sudo npm install -g edn-eq
+npm install -g edn-eq
 ```
 
 ## Requirements
