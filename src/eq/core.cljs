@@ -9,13 +9,11 @@
 ;; You must not remove this notice, or any other, from this software.
 
 (ns eq.core
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
-  (:require [cljs.core.async :refer [>! chan <! close!]]
+  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require [cljs.core.async :refer [<!]]
             [cljs.pprint :as pprint]
-            [cljs.nodejs :as nodejs]
             [cljs.reader :as edn]
-            [cljs.tools.cli :as cli]
-            [clojure.string :as string]))
+            [cljs.tools.cli :as cli]))
 
 (def fs (js/require "fs"))
 
