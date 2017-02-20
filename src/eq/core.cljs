@@ -18,7 +18,6 @@
             [clojure.string :as string]))
 
 (enable-console-print!)
-(.on js/process.stdout "error" js/process.exit) ; exit on closed stdout
 
 (def fs (js/require "fs"))
 
