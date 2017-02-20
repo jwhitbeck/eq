@@ -19,39 +19,24 @@
 
 (def fs (js/require "fs"))
 
-(defprotocol BufferedReader
-  (read-char [_]))
-
-(def buffer-size (* 8 1024))
-
-(deftype FileDescriptorBufferedReader [fd buffer ^:mutable string-buffer ^:mutable pos ^:mutable length]
-  BufferedReader
-  (read-char [_]
-    (if (< pos length)
-      (let [ch (get string-buffer pos)]
-        (set! pos (inc pos))
-        ch)
-      (let [num-bytes-read (.readSync fs fd buffer 0 buffer-size nil)]
-        (when (pos? num-bytes-read)
-          (set! string-buffer (.toString buffer "utf-8" 0 num-bytes-read))
-          (set! length (.-length string-buffer))
-          (set! pos 1)
-          (get string-buffer 0))))))
-
-(defn buffered-reader [fd]
-  (FileDescriptorBufferedReader. fd (js/Buffer. buffer-size) nil 0 0))
-
-(deftype BufferedPushbackReader [fdbr buffer]
+(deftype PushbackReader [fd pb-buf buf ^:mutable string ^:mutable pos]
   edn/PushbackReader
   (read-char [_]
-    (if (zero? (alength buffer))
-      (read-char fdbr)
-      (.pop buffer)))
-  (unread [_ ch]
-    (.push buffer ch)))
+    (cond
+      (pos? (alength pb-buf)) (.pop pb-buf)
+      (and string (< pos (.-length string))) (let [c (get string pos)]
+                                               (set! pos (inc pos))
+                                               c)
+      :else (let [nread (.readSync fs fd buf 0 (.-length buf) nil)]
+              (when (pos? nread)
+                (set! string (.toString buf "utf8" 0 nread))
+                (set! pos 1)
+                (get string 0)))))
+  (unread [_ c]
+    (.push pb-buf c)))
 
-(defn pushback-reader [fdbr]
-  (BufferedPushbackReader. fdbr (array)))
+(defn pushback-reader [fd]
+  (PushbackReader. fd (array) (js/Buffer. (* 8 1024)) nil 0))
 
 ;;; Blanket support for preserving edn tags
 (deftype Tagged [obj tag])
@@ -121,27 +106,33 @@
           (pr-fn (extractor x))))
       pr-fn)))
 
-(defn set-print-fns! []
+(defn node-setup! []
   ;; Don't use console.log for stdout to avoid unnecessary newlines.
   (set! *print-fn*
         (fn [& args]
           (.apply (.-write js/process.stdout) js/process.stdout (into-array args))))
   (set! *print-err-fn*
         (fn [& args]
-          (.apply (.-write js/process.stderr) js/process.stderr (into-array args)))))
+          (.apply (.-write js/process.stderr) js/process.stderr (into-array args))))
+  ;; Exit on closed stdout, e.g., `cat <file> | eq | head`.
+  (.on js/process.stdout "error" js/process.exit))
 
 (defn -main [& args]
-  (set-print-fns!)
+  (node-setup!)
   (let [parsed-opts (cli/parse-opts args cli-options)
         options (:options parsed-opts)]
     (cond
      (or (:help options) (-> parsed-opts :errors empty? not)) (print-usage (:summary parsed-opts))
      (:version options) (println "0.2.4")
      :else (let [pr-fn (print-fn options)
-                 pbrdr (-> (.openSync fs "/dev/stdin" "rs") buffered-reader pushback-reader)]
-             (go-loop [obj (edn/read pbrdr false ::eof false)]
-               (when-not (= obj ::eof)
-                 (pr-fn obj)
-                 (recur (edn/read pbrdr false ::eof false))))))))
+                 fd (.openSync fs "/dev/stdin" "rs")]
+             (go (try
+                   (loop [r (pushback-reader fd)]
+                     (let [obj (<! (go (edn/read r false ::eof false)))]
+                       (when-not (= obj ::eof)
+                         (pr-fn obj)
+                         (recur r))))
+                   (finally
+                     (.closeSync fs fd))))))))
 
 (set! *main-cli-fn* -main)
