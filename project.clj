@@ -5,11 +5,11 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git"
         :url "https://github.com/jwhitbeck/eq"}
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.145"]
-                 [org.clojure/core.async "0.2.374"]
-                 [org.clojure/tools.cli "0.3.3"]]
-  :plugins [[lein-cljsbuild "1.1.0"]]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojurescript "1.9.473"]
+                 [org.clojure/core.async "0.2.395"]
+                 [org.clojure/tools.cli "0.3.5"]
+  :plugins [[lein-cljsbuild "1.1.5"]]
   :source-paths ["src"]
   :hooks [leiningen.cljsbuild]
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.2.1"]
