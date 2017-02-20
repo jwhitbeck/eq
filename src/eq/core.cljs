@@ -17,8 +17,6 @@
             [cljs.tools.cli :as cli]
             [clojure.string :as string]))
 
-(enable-console-print!)
-
 (def fs (js/require "fs"))
 
 (defprotocol BufferedReader
@@ -110,14 +108,8 @@
                 "Multiple --dissoc, --apply-dissoc, --get, --get-in, --select-keys options may be passed, "
                 "in which case the output of each will be on a separate line.")))
 
-;;; Workaround the fact that the javascript console always prints a newline
-(defn pr-pretty [obj]
-  (-> (with-out-str (pprint/pprint obj))
-      string/trim-newline
-      print))
-
 (defn print-fn [options]
-  (let [pr-fn (if (:compact options) pr pr-pretty)
+  (let [pr-fn (if (:compact options) prn pprint/pprint)
         extractors (concat (map #(fn [x] (dissoc x %)) (:dissoc options))
                            (map #(fn [x] (apply dissoc x %)) (:apply-dissoc options))
                            (map #(fn [x] (get x %)) (:get options))
@@ -129,7 +121,17 @@
           (pr-fn (extractor x))))
       pr-fn)))
 
+(defn set-print-fns! []
+  ;; Don't use console.log for stdout to avoid unnecessary newlines.
+  (set! *print-fn*
+        (fn [& args]
+          (.apply (.-write js/process.stdout) js/process.stdout (into-array args))))
+  (set! *print-err-fn*
+        (fn [& args]
+          (.apply (.-write js/process.stderr) js/process.stderr (into-array args)))))
+
 (defn -main [& args]
+  (set-print-fns!)
   (let [parsed-opts (cli/parse-opts args cli-options)
         options (:options parsed-opts)]
     (cond
