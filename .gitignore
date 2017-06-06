@@ -1,4 +1,3 @@
-target/
+js/
 .nrepl-port
 .cljs_node_repl/
-eq.js

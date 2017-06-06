@@ -19,7 +19,7 @@
     },
     "preferGlobal": true,
     "bin": {
-        "eq": "eq.js"
+        "eq": "js/main.js"
     },
-    "files": ["eq.js", "LICENSE.txt"]
+    "files": ["js/main.js", "LICENSE.txt"]
 }
