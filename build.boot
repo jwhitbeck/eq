@@ -9,12 +9,18 @@
           :source-paths #{"src"})
 
 (require 'boot.repl
-         '[adzerk.boot-cljs :refer [cljs]])
+         '[adzerk.boot-cljs :refer [cljs]]
+         '[clojure.java.io :as io])
 
 (swap! boot.repl/*default-middleware* conj 'cemerick.piggieback/wrap-cljs-repl)
+
+(deftask rename
+  []
+  (with-post-wrap _
+    (.renameTo (io/file "target" "main.js") (io/file "eq.js"))))
 
 (deftask build
   []
   (comp (cljs :compiler-options {:target :nodejs :optimizations :advanced})
-        (sift :include #{#"main.js"})
-        (target :dir #{"js"})))
+        (target)
+        (rename)))
