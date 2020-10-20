@@ -78,7 +78,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: true
 
       - name: Download binaries
         uses: actions/download-artifact@v2
