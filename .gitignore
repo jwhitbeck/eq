@@ -2,3 +2,5 @@ eq.js
 target/
 .nrepl-port
 .cljs_node_repl/
+/.cpcache
+pom.xml
